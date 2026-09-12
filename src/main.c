@@ -1,6 +1,8 @@
 #include <SDL2/SDL.h>
 #include "chip8.h"
 
+
+#define INSTRUCTIONS_PER_FRAME 11   
 int main(int argc, char **argv){
     struct CHIP8 chip_8;
     printf("Starting..... \n");
@@ -44,7 +46,7 @@ int main(int argc, char **argv){
 
     initialize_chip8(&chip_8);
 
-    load_rom("C:/Users/Fouzi/Chip8-c/test_roms/6-keypad.ch8", &chip_8);
+    load_rom("C:/Users/Fouzi/Chip8-c/test_roms/Pong.ch8", &chip_8);
     SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 64, 32);  
     while (running) {
         while (SDL_PollEvent(&event)) {
@@ -64,7 +66,15 @@ int main(int argc, char **argv){
         }
          
 
-        for (int i = 0; i < 10; i++) emulate_cpu_cycle(&chip_8);
+        for (int i = 0; i < INSTRUCTIONS_PER_FRAME; i++) emulate_cpu_cycle(&chip_8);
+
+        if (chip_8.delay_timer > 0) --chip_8.delay_timer;
+        if (chip_8.sound_timer > 0) {
+            --chip_8.sound_timer;
+            if (chip_8.sound_timer == 0) {
+                printf("BEEP\n");
+            }
+        }
 
         uint32_t pixels[64 * 32];
         for (int i = 0; i < 64 * 32; i++)
@@ -72,13 +82,12 @@ int main(int argc, char **argv){
 
         SDL_UpdateTexture(texture, NULL, pixels, 64 * sizeof(uint32_t));
         SDL_RenderClear(renderer);
-        SDL_RenderCopy(renderer, texture, NULL, NULL);  // stretch 64x32 → whole window
+        SDL_RenderCopy(renderer, texture, NULL, NULL); 
         SDL_RenderPresent(renderer);
         
         SDL_Delay(16);
     }
 
-    // Cleanup
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
